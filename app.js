@@ -66,8 +66,8 @@ app.get('/produto/:id', async (req, res) => {
       const { id } = req.params;
 
       // Consulta ao banco de dados para buscar o produto pelo ID
-      const sql = 'SELECT nota FROM reviews WHERE id = ?';
-      db.query(sql, [id], (err, result) => {
+      const sql = 'SELECT * FROM reviews WHERE id = ?';
+      db.query(sql, [id, nome, produto, comentario], (err, result) => {
           if (err) {
               console.error('Erro ao buscar o produto:', err);
               return res.status(500).send('Erro ao buscar o produto');
@@ -90,19 +90,20 @@ app.get('/produto/:id', async (req, res) => {
 
   // Cadastrar Usuário
   app.post('/usuarios', (req, res) => {
-    const { nome, email } = req.body;
-    const sql = 'INSERT INTO usuarios (nome, email) VALUES (?, ?)';
-    db.query(sql, [nome, email], (err, result) => {
+    const { username ,email } = req.body;
+    const sql = 'INSERT INTO users (username, email) VALUES (?, ?)';
+    db.query(sql, [username, email], (err, result) => {
       if (err) {
         return res.status(500).send('Erro ao cadastrar usuário');
       }
       res.status(201).send('Usuário cadastrado com sucesso');
+      console.log("Usuário Cadastrado com Sucesso! "+username)
     });
   });
 // Coletar dados Usuário específico
-  app.get('/usuarios/nome/:nome', (req, res) => {
+  app.get('/usuarios/pesquisar/:username', (req, res) => {
     const { nome } = req.params;
-    const sql = 'SELECT * FROM usuarios WHERE nome = ?';
+    const sql = 'SELECT * FROM usuarios WHERE username = ?';
     db.query(sql, [nome], (err, result) => {
       if (err) {
         return res.status(500).send('Erro ao buscar usuário');
@@ -115,35 +116,82 @@ app.get('/produto/:id', async (req, res) => {
   });
   
 //Coletar dados bebidas
-app.get('/bebidas', (req, res) => {
-    const sql = 'SELECT * FROM drinks';
+app.get('/produtos', (req, res) => {
+    const sql = 'SELECT * FROM products';
     db.query(sql, (err, results) => {
       if (err) {
-        return res.status(500).send('Erro ao buscar as bebidas');
+        return res.status(500).send('Erro ao buscar as produto😐');
       }
       res.json(results);
     });
   });
 
 
-//Cadastrar Bebida
-app.post('/bebidas', (req, res) => {
-  const { nome, tipo, receita } = req.body;
-  const sqlChecagem = 'SELECT COUNT(*) AS count FROM drinks WHERE nome = ?';
-  db.query(sqlChecagem, [nome], (err, result) => {
+  //Sistema de Favoritar
+  app.post('/favorites', (req, res) => {
+    const { userId, productId } = req.body;
+
+    const query = 'INSERT INTO favorites (user_id, product_id) VALUES (?, ?)';
+    db.query(query, [userId, productId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(201).json({ message: 'Produto favoritado com sucesso' });
+        console.log("Produto favoritado com Sucesso!")
+    });
+});
+
+// Endpoint para listar favoritos de um usuário
+app.get('/favorites/:userId', (req, res) => {
+    const userId = req.params.userId;
+
+    const query = `
+        SELECT p.id, p.name, p.description
+        FROM products p
+        JOIN favorites f ON p.id = f.product_id
+        WHERE f.user_id = ?
+    `;
+    db.query(query, [userId], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.status(200).json(results);
+    });
+});
+// Deletar Favoritos
+app.delete('/favorites', (req, res) => {
+  const { userId, productId } = req.body;
+
+  const query = 'DELETE FROM favorites WHERE user_id = ? AND product_id = ?';
+  db.query(query, [userId, productId], (err, results) => {
       if (err) {
-          return res.status(500).send('Erro ao verificar a bebida');
+          return res.status(500).json({ error: err.message });
+      }
+      if (results.affectedRows === 0) {
+          return res.status(404).json({ message: 'Favorito não encontrado' });
+      }
+      res.status(200).json({ message: 'Produto removido dos favoritos com sucesso' });
+  });
+});
+
+//Cadastrar Bebida
+app.post('/produtos', (req, res) => {
+  const { name, description, ingredientes } = req.body;
+  const sqlChecagem = 'SELECT COUNT(*) AS count FROM products WHERE name = ?';
+  db.query(sqlChecagem, [name], (err, result) => {
+      if (err) {
+          return res.status(500).send('Erro ao verificar o produto');
       }
       const count = result[0].count;
       if (count > 0) {
-          return res.status(400).send('Bebida já cadastrada');
+          return res.status(400).send('Produto já cadastrado');
       }
-      const sqlInsercao = 'INSERT INTO drinks (nome, tipo, receita) VALUES (?, ?, ?)';
-      db.query(sqlInsercao, [nome, tipo, receita], (err, result) => {
+      const sqlInsercao = 'INSERT INTO products (name, description, ingredientes) VALUES (?, ?, ?)';
+      db.query(sqlInsercao, [name, description, ingredientes], (err, result) => {
           if (err) {
-              return res.status(500).send('Erro ao cadastrar a bebida');
+              return res.status(500).send('Erro ao cadastrar produto');
           }
-          res.status(201).send(`Bebida Cadastrada com Sucesso 😁 ${nome}, Que bebida interessante!`);
+          res.status(201).send(`Produto cadastrado com Sucesso 😁 ${name}, Que interessante!`);
       });
   });
 });
