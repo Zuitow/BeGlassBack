@@ -41,6 +41,37 @@ app.get('/', (req, res) => {
   });
 
 
+// Login
+app.post('/login', (req, res) => {
+  const { email, passcode } = req.body;
+
+  const sql = 'SELECT * FROM users WHERE email = ? AND passcode = ?';
+  db.query(sql, [email, passcode], (err, results) => {
+    if (err) {
+      return res.status(500).send('Erro ao buscar usuário');
+    }
+    if (results.length === 0) {
+      return res.status(404).send('Email ou senha incorretos');
+    }
+
+    // Criar sessão para o usuário logado
+    req.session.userId = results[0].id;
+    res.status(200).send('Login bem-sucedido');
+  });
+});
+
+//Rota para logout
+app.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.status(500).send('Erro ao fazer logout');
+    }
+    res.status(200).send('Logout bem-sucedido');
+  });
+});
+
+  
+
 app.post("/reviews", async (req, res) => {
   try {
       const { autor, produto, comentario, nota } = req.body;
@@ -90,9 +121,9 @@ app.get('/produto/:id', async (req, res) => {
 
   // Cadastrar Usuário
   app.post('/usuarios', (req, res) => {
-    const { username ,email } = req.body;
-    const sql = 'INSERT INTO users (username, email) VALUES (?, ?)';
-    db.query(sql, [username, email], (err, result) => {
+    const { username , email, passcode } = req.body;
+    const sql = 'INSERT INTO users (username, email, passcode) VALUES (?, ?, ?)';
+    db.query(sql, [username, email, passcode], (err, result) => {
       if (err) {
         return res.status(500).send('Erro ao cadastrar usuário');
       }
@@ -100,11 +131,25 @@ app.get('/produto/:id', async (req, res) => {
       console.log("Usuário Cadastrado com Sucesso! "+username)
     });
   });
+
+  // Cadastrar Administrador
+  app.post('/admins', (req, res) => {
+    const { username, email, passcode } = req.body;
+    const sql = 'INSERT INTO admin (username, email, passcode) VALUES (?, ?, ?)';
+    db.query(sql, [username, email, passcode], (err, result) => {
+        if (err) {
+            return res.status(500).send('Erro ao cadastrar administrador');
+        }
+        res.status(201).send('Administrador cadastrado com sucesso');
+        console.log("Administrador Cadastrado com Sucesso! " + username);
+    });
+});
+
 // Coletar dados Usuário específico
   app.get('/usuarios/pesquisar/:username', (req, res) => {
-    const { nome } = req.params;
+    const { username } = req.params;
     const sql = 'SELECT * FROM usuarios WHERE username = ?';
-    db.query(sql, [nome], (err, result) => {
+    db.query(sql, [username], (err, result) => {
       if (err) {
         return res.status(500).send('Erro ao buscar usuário');
       }
