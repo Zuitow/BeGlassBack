@@ -23,7 +23,12 @@ db.connect((err) => {
   console.log("Conectado ao banco de dados MySQL");
 });
 
-app.use(cors());
+app.use(cors({
+  origin: '*', // ou especifique o domínio se necessário
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(bodyParser.json());
 const SECRET_KEY = "seuSegredoJWT";
 
@@ -44,10 +49,10 @@ app.get("/usuario/:nome", (req, res) => {
 
 // Login
 app.post("/login", (req, res) => {
-  const { email, passcode } = req.body;
+  const { username, passcode } = req.body;
 
-  const sql = "SELECT * FROM users WHERE email = ? AND passcode = ?";
-  db.query(sql, [email, passcode], (err, results) => {
+  const sql = "SELECT * FROM users WHERE username = ? AND passcode = ?";
+  db.query(sql, [username, passcode], (err, results) => {
     if (err) {
       return res.status(500).send("Erro ao buscar usuário");
     }
@@ -78,26 +83,6 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
-
-//Postagem de Reviews
-app.post("/reviews", authenticateToken, async (req, res) => {
-  try {
-    const { autor, produto, comentario, nota } = req.body;
-
-    const sql = "INSERT INTO reviews (autor, produto, comentario, nota) VALUES (?, ?, ?, ?)";
-    db.query(sql, [autor, produto, comentario, nota], (err, result) => {
-      if (err) {
-        console.error("Erro ao inserir a review:", err);
-        return res.status(500).send("Erro ao enviar Review");
-      }
-      console.log("Review inserida com sucesso!");
-      res.status(201).send("Review enviada com sucesso");
-    });
-  } catch (error) {
-    console.error("Erro ao inserir a review:", error);
-    res.status(500).json({ error: "Erro ao inserir a review" });
-  }
-});
 
 // Cadastrar Usuário
 app.post("/usuarios", (req, res) => {
@@ -238,6 +223,22 @@ app.get("/produtos", (req, res) => {
     res.json(results);
   });
 });
+
+// Coletar dados de um produto específico
+app.get("/produto/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "SELECT * FROM products WHERE id = ?";
+  db.query(sql, [id], (err, results) => {
+    if (err) {
+      return res.status(500).send("Erro ao buscar o produto");
+    }
+    if (results.length === 0) {
+      return res.status(404).send("Produto não encontrado");
+    }
+    res.json(results[0]);
+  });
+});
+
 
 // Sistema de Favoritar
 app.post("/favorites", (req, res) => {
