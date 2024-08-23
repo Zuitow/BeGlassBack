@@ -151,39 +151,6 @@ app.get("/reviews/:id", (req, res) => {
   });
 });
 
-// Enviar review
-// app.post("/reviews", authenticateToken, async (req, res) => {
-//   try {
-//     const { autor, produto, comentario, nota } = req.body;
-//     const userId = req.user.id; // Pegando o ID do usuário do token
-
-//     // Verifique se o usuário já enviou um review para este produto
-//     const checkExistingReview = 'SELECT * FROM reviews WHERE produto = ? AND autor = ?';
-//     db.query(checkExistingReview, [produto, userId], (err, results) => {
-//       if (err) {
-//         console.error('Erro ao verificar review existente:', err);
-//         return res.status(500).send('Erro ao verificar review existente');
-//       }
-//       if (results.length > 0) {
-//         return res.status(400).send('Você já enviou um review para este produto');
-//       }
-
-//       // Inserir o novo review
-//       const sql = "INSERT INTO reviews (autor, produto, comentario, nota) VALUES (?, ?, ?, ?)";
-//       db.query(sql, [userId, produto, comentario, nota], (err, result) => {
-//         if (err) {
-//           console.error("Erro ao inserir a review:", err);
-//           return res.status(500).send("Erro ao enviar review");
-//         }
-//         console.log("Review inserida com sucesso!");
-//         res.status(201).send("Review enviada com sucesso");
-//       });
-//     });
-//   } catch (error) {
-//     console.error("Erro ao inserir a review:", error);
-//     res.status(500).json({ error: "Erro ao inserir a review" });
-//   }
-// });
 
 // Cadastrar Administrador
 app.post("/admins", (req, res) => {
@@ -221,21 +188,6 @@ app.get("/produtos", (req, res) => {
       return res.status(500).send("Erro ao buscar as produto");
     }
     res.json(results);
-  });
-});
-
-// Coletar dados de um produto específico
-app.get("/produto/:id", (req, res) => {
-  const { id } = req.params;
-  const sql = "SELECT * FROM products WHERE id = ?";
-  db.query(sql, [id], (err, results) => {
-    if (err) {
-      return res.status(500).send("Erro ao buscar o produto");
-    }
-    if (results.length === 0) {
-      return res.status(404).send("Produto não encontrado");
-    }
-    res.json(results[0]);
   });
 });
 
@@ -328,18 +280,6 @@ app.get("/produtos/:id", (req, res) => {
       return res.status(404).send("Produto não encontrado");
     }
     res.json(result[0]); // Retorna um único objeto
-  });
-});
-
-// Específico pelo nome
-app.get("/produtos/pesquisar/nome/:nome", (req, res) => {
-  const { nome } = req.params;
-  const sql = "SELECT * FROM products WHERE name LIKE ?";
-  db.query(sql, [`%${nome}%`], (err, results) => {
-    if (err) {
-      return res.status(500).send("Erro ao buscar produto");
-    }
-    res.json(results);
   });
 });
 
