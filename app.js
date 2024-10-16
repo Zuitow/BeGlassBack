@@ -1,18 +1,18 @@
 const bodyParser = require("body-parser");
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const mysql = require("mysql2/promise");
+const mysql = require("mysql2");
 const cors = require("cors");
 const { query } = require('./database'); // Importando a função query
-const userModel = require('./userModel'); // Importando o userModel
+const nodemailer = require('nodemailer')
 
 const app = express();
 const port = 3000;
 
-const SECRET_KEY = "ziguiriguidum"; // Certifique-se de que a mesma chave está sendo usada em todas as partes
+const SECRET_KEY = "a4fR&8qJ9@c5Zp^2wG1!kLm#6xYtUv$3jQe7RzWmZ2sQ4hT"; // Certifique-se de que a mesma chave está sendo usada em todas as partes
 
 // Configuração da conexão com o banco de dados MySQL
-const db = mysql.createPool({
+const db = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "",
@@ -32,6 +32,32 @@ app.use(bodyParser.json());
 app.get("/", (req, res) => {
   res.send("Página Inicial");
 });
+
+
+module.exports = async(email, subject, text) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SERVICE,
+      service: process.env.SERVICE,
+      port: process.env.EMAIL.PORT,
+      secure: Boolean(process.env.SECURE),
+      auth: {
+        user: process.env.USER,
+        pass: process.env.PASS
+      }
+    })
+    await transporter.sendMail({
+      from: process.env.USER,
+      to: email,
+      subject: subject,
+      text: text
+    });
+    console.log("Email Enviado com Sucesso")
+  } catch (error) {
+    console.log("Ocorreu um erro e o Email não foi envaido.")
+    console.log(error)
+  }
+}
 
 // Middleware para autenticação JWT
 const authenticateJWT = (req, res, next) => {
@@ -134,38 +160,28 @@ app.post("/usuarios", (req, res) => {
 });
 
 // Envio de reviews
-app.post("/reviews", async (req, res) => {
-  try {
-    const { autor, produto, comentario, nota } = req.body;
+app.post("/reviews", (req, res) => {
+  const { autor, produto, comentario, nota } = req.body;
 
-    const sql = "INSERT INTO reviews (autor, produto, comentario, nota) VALUES (?, ?, ?, ?)";
-    db.query(sql, [autor, produto, comentario, nota], (err, result) => {
-      if (err) {
-        console.error("Erro ao inserir a review:", err);
-        return res.status(500).send("Erro ao enviar Review");
-      }
-      console.log("Review inserida com sucesso!");
-      res.status(201).send("Review enviada com sucesso");
-    });
-  } catch (error) {
-    console.error("Erro ao inserir a review:", error);
-    res.status(500).json({ error: "Erro ao inserir a review" });
-  }
-});
-
-// Endpoint para obter reviews de um produto específico pelo ID do produto
-app.get("/reviews/:id", (req, res) => {
-  const { id } = req.params;
-  const sql = "SELECT * FROM reviews WHERE produto = ?";
-  db.query(sql, [id], (err, results) => {
+  const sql = "INSERT INTO reviews (autor, produto, comentario, nota) VALUES (?, ?, ?, ?)";
+  db.query(sql, [autor, produto, comentario, nota], (err) => {
     if (err) {
-      console.error("Erro ao buscar reviews:", err);
-      return res.status(500).send("Erro ao buscar reviews");
+      return res.status(500).send("Erro ao enviar Review");
     }
-    res.status(200).json(results);
+    res.status(201).send("Review enviada com sucesso");
   });
 });
 
+// Endpoint para obter reviews de um produto específico pelo ID do produto
+app.get("/reviews/:id", async (req, res) => {
+  const sql = "SELECT * FROM reviews WHERE produto = ?";
+  try {
+    const results = await query(sql, [req.params.id]);
+    res.status(200).json(results);
+  } catch (err) {
+    return res.status(500).send("Erro ao buscar reviews");
+  }
+});
 
 // Cadastrar Administrador
 app.post("/admins", (req, res) => {
@@ -195,7 +211,6 @@ app.get("/usuarios/:username", async (req, res) => {
 
 // Coletar dados bebidas
 app.get("/produtos", (req, res) => {
-	console.log("Buscando Bebidas")
   const sql = "SELECT * FROM products";
   db.query(sql, (err, results) => {
     if (err) {
@@ -248,19 +263,35 @@ app.delete("/favorites", (req, res) => {
   });
 });
 
-// Endpoint para obter um produto específico pelo ID
-app.get("/produtos/:id", (req, res) => {
+
+app.get("/notas/:id", (req, res) => {
   const { id } = req.params;
-  const sql = "SELECT * FROM products WHERE id = ?";
+  const sql = "SELECT AVG(nota) as mediaNota FROM reviews WHERE produto = ?"; // Calcula a média das notas
+  
   db.query(sql, [id], (err, result) => {
     if (err) {
-      console.error("Erro ao buscar produto:", err);
+      console.error("Erro ao buscar notas:", err);
+      return res.status(500).json({ error: "Erro ao buscar notas" });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Nenhuma review encontrada" });
+    } else {
+      res.json({ mediaNota: result[0].mediaNota }); // Retorna a média das notas
+    }
+  });
+});
+
+// Endpoint para obter um produto específico pelo ID
+app.get("/produtos/:id", (req, res) => {
+  const sql = "SELECT * FROM products WHERE id = ?";
+  db.query(sql, [req.params.id], (err, result) => {
+    if (err) {
       return res.status(500).send("Erro ao buscar produto");
     }
     if (result.length === 0) {
       return res.status(404).send("Produto não encontrado");
     }
-    res.json(result[0]); // Retorna um único objeto
+    res.json(result[0]);
   });
 });
 
