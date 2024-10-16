@@ -134,72 +134,37 @@ app.post("/usuarios", (req, res) => {
 });
 
 // Envio de reviews
-app.post("/reviews", (req, res) => {
-	console.log("Começou")
-  const { autor, produto, comentario, nota } = req.body;
+app.post("/reviews", async (req, res) => {
+  try {
+    const { autor, produto, comentario, nota } = req.body;
 
-  if (!produto || !comentario || !nota) {
-    return res.status(400).send("Dados incompletos");
-	console.log("Meio")
+    const sql = "INSERT INTO reviews (autor, produto, comentario, nota) VALUES (?, ?, ?, ?)";
+    db.query(sql, [autor, produto, comentario, nota], (err, result) => {
+      if (err) {
+        console.error("Erro ao inserir a review:", err);
+        return res.status(500).send("Erro ao enviar Review");
+      }
+      console.log("Review inserida com sucesso!");
+      res.status(201).send("Review enviada com sucesso");
+    });
+  } catch (error) {
+    console.error("Erro ao inserir a review:", error);
+    res.status(500).json({ error: "Erro ao inserir a review" });
   }
+});
 
-  const sql = "INSERT INTO reviews ( autor, produto, comentario, nota) VALUES (?, ?, ?, ?)";
-  console.log("Meio2")
-  db.query(sql, [autor, produto, comentario, nota], (err) => {
+// Endpoint para obter reviews de um produto específico pelo ID do produto
+app.get("/reviews/:id", (req, res) => {
+  const { id } = req.params;
+  const sql = "SELECT * FROM reviews WHERE produto = ?";
+  db.query(sql, [id], (err, results) => {
     if (err) {
-		console.log("Deu erro")
-      return res.status(500).send("Erro ao enviar Review");
+      console.error("Erro ao buscar reviews:", err);
+      return res.status(500).send("Erro ao buscar reviews");
     }
-    return res.status(200).send("Review enviada com sucesso");
-	console.log("Review Enviada com sucesso.")
+    res.status(200).json(results);
   });
 });
-
-// Endpoint para obter reviews de um usuário específico pelo autor
-app.get("/reviews", async (req, res) => {
-  const { autor } = req.query; // Obtém o autor da query string
-
-  // Verifica se o autor foi fornecido
-  if (!autor) {
-    return res.status(400).json({ message: "Autor é obrigatório." });
-  }
-
-  const sql = "SELECT * FROM reviews WHERE autor = ?"; // Ajuste a consulta para usar autor
-  try {
-    const results = await query(sql, [autor]); // Executa a consulta com o autor
-    res.status(200).json(results); // Retorna os resultados
-  } catch (err) {
-    console.error("Erro ao buscar reviews:", err);
-    return res.status(500).send("Erro ao buscar reviews"); // Retorna um erro em caso de falha
-  }
-});
-
-// Busca notas do produto
-app.get("/notas", async (req, res) => {
-  const { produto } = req.query;
-  console.log("Entrei");
-
-  // Verifica se o ID do produto foi fornecido
-  if (!produto) {
-    console.log("Não estou achando o ID, como que ajuda assim??");
-    return res.status(400).send("ID do produto não fornecido");
-  }
-
-  try {
-    // Consulta SQL para buscar as notas do produto
-    const sql = "SELECT * FROM reviews WHERE produto = ?";
-    console.log("Caçando produto");
-    const [result] = await query(sql, [produto]);
-	console.log("Sucesso ao procurar produto" + result)
-    
-    // Retorna as reviews em formato JSON
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("Erro ao buscar reviews", err);
-    res.status(500).send("Erro ao buscar reviews");
-  }
-});
-
 
 
 // Cadastrar Administrador
@@ -284,24 +249,19 @@ app.delete("/favorites", (req, res) => {
 });
 
 // Endpoint para obter um produto específico pelo ID
-app.get("/produtos/:id", async (req, res) => {
-  console.log("Buscando Bebidas");
-
+app.get("/produtos/:id", (req, res) => {
+  const { id } = req.params;
   const sql = "SELECT * FROM products WHERE id = ?";
-  
-  try {
-    const [result] = await db.query(sql, [req.params.id]);
-    console.log("Resultado:", result);
-
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Erro ao buscar produto:", err);
+      return res.status(500).send("Erro ao buscar produto");
+    }
     if (result.length === 0) {
       return res.status(404).send("Produto não encontrado");
     }
-
-    res.json(result[0]);
-  } catch (err) {
-    console.error("Erro ao buscar produto:", err);
-    res.status(500).send("Erro ao buscar produto");
-  }
+    res.json(result[0]); // Retorna um único objeto
+  });
 });
 
 // Iniciar o servidor
