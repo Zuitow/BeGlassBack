@@ -20,7 +20,7 @@ async function main() {
     to: ['milenabasso444@gmail.com'],
     subject: "Email Teste",
     text: "Este é um email teste viu?",
-    html: "<b>Hello World</b>",
+    html: "<b>Este email é um teste</b>",
   };
 
   const sendMail = async (transporter, mailOptions) => {
