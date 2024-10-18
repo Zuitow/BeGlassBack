@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 const mysql = require("mysql2");
 const cors = require("cors");
 const { query } = require('./database'); // Importando a função query
-const nodemailer = require('nodemailer')
+const sendResetPasswordEmail = require("./resetMail");
 
 const app = express();
 const port = 3000;
@@ -35,8 +35,6 @@ app.get("/", (req, res) => {
 
 
 
-
-sendMail(transporter, mailOptions);
 // Middleware para autenticação JWT
 const authenticateJWT = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -55,14 +53,20 @@ const authenticateJWT = (req, res, next) => {
   });
 };
 
-// Rota para buscar o perfil do usuário
-app.get('/perfil/:username', authenticateJWT, async (req, res) => {
+// Rota para buscar o perfil do usuário usando callbacks
+app.get('/perfil/:username', authenticateJWT, (req, res) => {
   const { username } = req.params;
-console.log(username)
-  try {
-    // Executa a consulta SQL diretamente
-    const sql = "SELECT * FROM users WHERE username = ?";
-    const [results] = await db.query(sql, [username]); // Executando a query com o pool de conexão
+  console.log(username);
+
+  // Executa a consulta SQL diretamente
+  const sql = "SELECT * FROM users WHERE username = ?";
+  
+  db.query(sql, [username], (error, results) => {
+    if (error) {
+      // Tratar o erro aqui
+      console.error('Erro ao buscar o perfil do usuário:', error);
+      return res.status(500).json({ message: 'Erro ao buscar o perfil' });
+    }
 
     // Verifica se o usuário foi encontrado
     if (results.length === 0) {
@@ -71,23 +75,21 @@ console.log(username)
 
     // Retorna os dados do usuário encontrado
     res.status(200).json(results[0]);
-  } catch (error) {
-    console.error('Erro ao buscar o perfil do usuário:', error);
-    res.status(500).json({ message: 'Erro ao buscar o perfil' });
-  }
+    console.log(results);
+  });
 });
 
 
 // Login
 app.post("/login", async (req, res) => {
-  const { username, passcode, rememberMe } = req.body;
+  const { email, password, rememberMe } = req.body;
   console.log('Requisição recebida:', req.body);
 
-  const sql = "SELECT * FROM users WHERE username = ? AND passcode = ?";
+  const sql = "SELECT * FROM users WHERE email = ? AND password = ?";
   
   try {
-    console.log('Executando consulta SQL:', sql, [username, passcode]);
-    const results = await query(sql, [username, passcode]);
+    console.log('Executando consulta SQL:', sql, [email, password]);
+    const results = await query(sql, [email, password]);
     console.log("Resultado da consulta:", results);
 
     if (results.length === 0) {
@@ -95,21 +97,15 @@ app.post("/login", async (req, res) => {
       return res.status(404).json({ message: "Usuário ou senha incorretos" });
     }
 
-    // Extrair as informações do usuário retornado do banco de dados
-   const user = {
-  id: results[0][0].userId,      // Acessando o primeiro array interno
-  username: results[0][0].username,
-  email: results[0][0].email,
-};
+    const user = {
+      id: results[0][0].userId,
+      username: results[0][0].username,
+      email: results[0][0].email,
+    };
 
-	
-	console.log("Usuário no token:", user); // Verifique se contém id, username e email
+    console.log("Usuário no token:", user);
 
-
-    // Definir o tempo de expiração do token
     const expiresIn = rememberMe ? "7d" : "1h";
-
-    // Criar o token com as informações do usuário
     const token = jwt.sign(user, SECRET_KEY, { expiresIn });
 
     console.log("Token gerado:", token);
@@ -121,40 +117,77 @@ app.post("/login", async (req, res) => {
 });
 
 
-//Endpoint para Esqueci a Senha
-// app.post("/esqueci-Senha", async(req, res)=> {
-//   const{ email }= req.body;
-//   try {
-//      const oldUser = await UserActivation.findOne({ email })
-//      if(!oldUser){
-//       return res.send("Usuário não existe")
-//      }
-//      const secret = SECRET_KEY + oldUser.passoword;
-//      const token = jwt.sign({ email: oldUser.email, id: oldUser._id,}, secret, {
-//       expiresIn: "5m"
-//      });
-//      const link = `http://localhost:3000/reset-senha/${oldUser._id}/${token}`;
-//      console.log(link)
+// Endpoint para "Esqueci a senha"
+app.post("/esqueci-senha", async (req, res) => {
+  const { email } = req.body;
+  const sql = "SELECT * FROM users WHERE email = ?";
+  
+  try {
+    const [user] = await query(sql, [email]);
 
-//   } catch (error) {
-    
-//   }
-// })
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
 
-// app.get('/reset-senha', async(req,res)=>{
-//   const {id, token } = req.params;
-//   console.log(req.params)
-// })
+    // Gerar um token JWT com tempo de expiração
+    const secret = SECRET_KEY + user.password;
+    const token = jwt.sign({ email: user.email, id: user.id }, secret, { expiresIn: "15m" });
+
+    // Link de redefinição de senha (ajuste conforme o endereço do seu site)
+    const resetLink = `http://localhost:3000/reset-senha/${user.id}/${token}`;
+
+    // Enviar e-mail com o link de redefinição
+    await sendResetPasswordEmail(email, resetLink);
+
+    res.status(200).json({ message: "E-mail de redefinição enviado com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao processar solicitação:", error);
+    res.status(500).json({ message: "Erro ao processar solicitação" });
+  }
+});
+
+// Endpoint para resetar a senha
+app.post('/reset-senha/:id/:token', async (req, res) => {
+  const { id, token } = req.params;
+  const { newPassword } = req.body;
+
+  const sql = "SELECT * FROM users WHERE id = ?";
+
+  try {
+    const [user] = await query(sql, [id]);
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    const secret = SECRET_KEY + user.password;
+
+    // Verificar o token
+    try {
+      jwt.verify(token, secret);
+
+      // Atualizar a senha do usuário
+      const updateSql = "UPDATE users SET password = ? WHERE id = ?";
+      await query(updateSql, [newPassword, id]);
+
+      res.status(200).json({ message: "Senha alterada com sucesso!" });
+    } catch (err) {
+      return res.status(400).json({ message: "Token inválido ou expirado" });
+    }
+  } catch (error) {
+    console.error("Erro ao resetar senha:", error);
+    res.status(500).json({ message: "Erro ao resetar senha" });
+  }
+});
 
 // Cadastrar Usuário
 app.post("/usuarios", (req, res) => {
-  const { username, email, passcode } = req.body;
-  if (!username || !email || !passcode) {
+  const { username, email,password } = req.body;
+  if (!username || !email || password) {
     return res.status(400).send("Todos os campos são obrigatórios");
   }
 
-  const sql = "INSERT INTO users (username, email, passcode) VALUES (?, ?, ?)";
-  db.query(sql, [username, email, passcode], (err) => {
+  const sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
+  db.query(sql, [username, email, password], (err) => {
     if (err) {
       return res.status(500).send("Erro ao cadastrar usuário");
     }
@@ -188,9 +221,9 @@ app.get("/reviews/:id", async (req, res) => {
 
 // Cadastrar Administrador
 app.post("/admins", (req, res) => {
-  const { username, email, passcode } = req.body;
-  const sql = "INSERT INTO admin (username, email, passcode) VALUES (?, ?, ?)";
-  db.query(sql, [username, email, passcode], (err) => {
+  const { username, email, password } = req.body;
+  const sql = "INSERT INTO admin (username, email, password) VALUES (?, ?, ?)";
+  db.query(sql, [username, email, password], (err) => {
     if (err) {
       return res.status(500).send("Erro ao cadastrar administrador");
     }

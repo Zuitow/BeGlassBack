@@ -17,7 +17,7 @@ async function main() {
       name: 'BeGlass',
       address: 'beglass20@gmail.com' // Ajuste este campo se estiver usando variáveis de ambiente
     },
-    to: ['milenabasso444@gmail.com'],
+    to: ['guilhermesantiagodebrito@gmail.com'],
     subject: "Email Teste",
     text: "Este é um email teste viu?",
     html: "<b>Este email é um teste</b>",
