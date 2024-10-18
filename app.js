@@ -34,31 +34,9 @@ app.get("/", (req, res) => {
 });
 
 
-module.exports = async(email, subject, text) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SERVICE,
-      service: process.env.SERVICE,
-      port: process.env.EMAIL.PORT,
-      secure: Boolean(process.env.SECURE),
-      auth: {
-        user: process.env.USER,
-        pass: process.env.PASS
-      }
-    })
-    await transporter.sendMail({
-      from: process.env.USER,
-      to: email,
-      subject: subject,
-      text: text
-    });
-    console.log("Email Enviado com Sucesso")
-  } catch (error) {
-    console.log("Ocorreu um erro e o Email não foi envaido.")
-    console.log(error)
-  }
-}
 
+
+sendMail(transporter, mailOptions);
 // Middleware para autenticação JWT
 const authenticateJWT = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -142,6 +120,31 @@ app.post("/login", async (req, res) => {
   }
 });
 
+
+//Endpoint para Esqueci a Senha
+// app.post("/esqueci-Senha", async(req, res)=> {
+//   const{ email }= req.body;
+//   try {
+//      const oldUser = await UserActivation.findOne({ email })
+//      if(!oldUser){
+//       return res.send("Usuário não existe")
+//      }
+//      const secret = SECRET_KEY + oldUser.passoword;
+//      const token = jwt.sign({ email: oldUser.email, id: oldUser._id,}, secret, {
+//       expiresIn: "5m"
+//      });
+//      const link = `http://localhost:3000/reset-senha/${oldUser._id}/${token}`;
+//      console.log(link)
+
+//   } catch (error) {
+    
+//   }
+// })
+
+// app.get('/reset-senha', async(req,res)=>{
+//   const {id, token } = req.params;
+//   console.log(req.params)
+// })
 
 // Cadastrar Usuário
 app.post("/usuarios", (req, res) => {
