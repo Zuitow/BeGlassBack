@@ -285,13 +285,53 @@ app.get("/produtos", (req, res) => {
 // Sistema de Favoritar
 app.post("/favorites", (req, res) => {
   const { userId, productId } = req.body;
-  const query = "INSERT INTO favorites (user_id, product_id) VALUES (?, ?)";
-  db.query(query, [userId, productId], (err) => {
+
+  // Verifica se o favorito já existe
+  const checkQuery = "SELECT * FROM favorites WHERE user_id = ? AND product_id = ?";
+  db.query(checkQuery, [userId, productId], (err, results) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.status(201).json({ message: "Produto favoritado com sucesso" });
+
+    if (results.length > 0) {
+      return res.status(409).json({ message: "Produto já favoritado" });
+    }
+
+    // Insere o favorito
+    const insertQuery = "INSERT INTO favorites (user_id, product_id) VALUES (?, ?)";
+    db.query(insertQuery, [userId, productId], (err) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ message: "Produto favoritado com sucesso" });
+    });
   });
+});
+
+
+//Verificar se está favoritado
+app.get("/favorites/:userId/:productId", async (req, res) => {
+  const { userId, productId } = req.params;
+
+  // Consulta SQL para verificar se o produto está favoritado
+  const sql = "SELECT * FROM favorites WHERE user_id = ? AND product_id = ?";
+
+  try {
+    console.log('Executando consulta SQL:', sql, [userId, productId]);
+    
+    const results = await query(sql, [userId, productId]); // Usando a função query personalizada
+
+    if (results.length > 0) {
+      // Produto está favoritado
+      return res.status(200).json({ isFavorite: true });
+    } else {
+      // Produto não está favoritado
+      return res.status(200).json({ isFavorite: false });
+    }
+  } catch (err) {
+    console.error("Erro ao verificar favoritos:", err.message);
+    return res.status(500).json({ message: "Erro ao verificar favoritos" });
+  }
 });
 
 // Endpoint para listar favoritos de um usuário
