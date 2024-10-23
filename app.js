@@ -82,14 +82,15 @@ app.get('/perfil/:username', authenticateJWT, (req, res) => {
 
 // Login
 app.post("/login", async (req, res) => {
-  const { email, password, rememberMe } = req.body;
+  const { email, username, password, rememberMe } = req.body; // Altere para usernameOrEmail
   console.log('Requisição recebida:', req.body);
 
-  const sql = "SELECT * FROM users WHERE email = ? AND password = ?";
-  
+  // Consulta SQL que verifica se o username ou email corresponde
+  const sql = "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?";
   try {
-    console.log('Executando consulta SQL:', sql, [email, password]);
-    const results = await query(sql, [email, password]);
+    console.log('Executando consulta SQL:', sql, [email, username, password]); // Use usernameOrEmail para ambos
+    const results = await query(sql, [email, username, password]);
+  
     console.log("Resultado da consulta:", results);
 
     if (results.length === 0) {
@@ -100,8 +101,9 @@ app.post("/login", async (req, res) => {
     const user = {
       id: results[0][0].userId,
       username: results[0][0].username,
-      email: results[0][0].email,
+      email: results[0].email,
     };
+
 
     console.log("Usuário no token:", user);
 
@@ -181,17 +183,39 @@ app.post('/reset-senha/:id/:token', async (req, res) => {
 
 // Cadastrar Usuário
 app.post("/usuarios", (req, res) => {
-  const { username, email,password } = req.body;
-  if (!username || !email || password) {
-    return res.status(400).send("Todos os campos são obrigatórios");
+  const { username, email, password } = req.body;
+
+  console.log("Recebendo dados de cadastro:", { username, email, password });
+
+  const isGmail = email.endsWith('@gmail.com');
+  const isValidPassword = password.length >= 8;
+
+  if (!username || !email || !password) {
+    console.log("Erro: Todos os campos são obrigatórios.");
+    return res.status(400).send("Todos os campos são obrigatórios.");
   }
 
-  const sql = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
-  db.query(sql, [username, email, password], (err) => {
-    if (err) {
-      return res.status(500).send("Erro ao cadastrar usuário");
+  if (!isGmail) {
+    console.log("Erro: O email não é um @gmail.com.", { email });
+    return res.status(400).send("O email deve ser um @gmail.com.");
+  }
+
+  if (!isValidPassword) {
+    console.log("Erro: A senha é muito curta.", { passwordLength: password.length });
+    return res.status(400).send("A senha deve ter no mínimo 8 caracteres.");
+  }
+
+  // Consulta SQL para inserir os dados do usuário na tabela 'users'
+  const sql = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
+
+  db.query(sql, [username, email, password], (error, results) => {
+    if (error) {
+      console.log("Erro ao inserir usuário:", error);
+      return res.status(500).send("Erro ao cadastrar o usuário. Tente novamente.");
     }
-    res.status(201).send("Usuário cadastrado com sucesso");
+
+    console.log("Usuário cadastrado com sucesso:", results);
+    return res.status(200).send("Usuário cadastrado com sucesso.");
   });
 });
 
@@ -218,6 +242,8 @@ app.get("/reviews/:id", async (req, res) => {
     return res.status(500).send("Erro ao buscar reviews");
   }
 });
+
+
 
 // Cadastrar Administrador
 app.post("/admins", (req, res) => {
@@ -299,6 +325,30 @@ app.delete("/favorites", (req, res) => {
   });
 });
 
+// Rota para buscar reviews por autor
+app.get("/procurarReviews", (req, res) => {
+  const { autor } = req.query; // Pega o autor do query string
+
+  if (!autor) {
+    return res.status(400).send("Autor é necessário.");
+  }
+
+  // SQL para buscar reviews do autor
+  const sql = "SELECT * FROM reviews WHERE autor = ?"; // Ajuste a tabela e os campos conforme sua estrutura
+
+  db.query(sql, [autor], (error, results) => {
+    if (error) {
+      console.error("Erro ao buscar reviews:", error);
+      return res.status(500).send("Erro ao buscar reviews.");
+    }
+
+    if (results.length === 0) {
+      return res.status(404).send("Nenhuma review encontrada para este autor.");
+    }
+
+    res.status(200).json(results); // Retorna as reviews encontradas
+  });
+});
 
 app.get("/notas/:id", (req, res) => {
   const { id } = req.params;
