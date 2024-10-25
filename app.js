@@ -88,7 +88,7 @@ app.post("/login", async (req, res) => {
   // Consulta SQL que verifica se o username ou email corresponde
   const sql = "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?";
   try {
-    console.log('Executando consulta SQL:', sql, [email, username, password]); // Use usernameOrEmail para ambos
+    console.log('Executando consulta SQL:', sql, [email, username, password]); 
     const results = await query(sql, [email, username, password]);
   
     console.log("Resultado da consulta:", results);
