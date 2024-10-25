@@ -317,22 +317,25 @@ app.get("/favorites/:userId/:productId", async (req, res) => {
   const sql = "SELECT * FROM favorites WHERE user_id = ? AND product_id = ?";
 
   try {
-    console.log('Executando consulta SQL:', sql, [userId, productId]);
-    
-    const results = await query(sql, [userId, productId]); // Usando a função query personalizada
+    const results = await query(sql, [userId, productId]); // Retorna um array de resultados
+    console.log("Resultados completos da consulta:", results[0].length); // Para debug
 
-    if (results.length > 0) {
-      // Produto está favoritado
+
+    // Verifica se existem resultados
+    if (results[0].length > 0) {
+      console.log("Produto está favoritado.", );
       return res.status(200).json({ isFavorite: true });
     } else {
-      // Produto não está favoritado
+      console.log("Produto não está favoritado.",);
       return res.status(200).json({ isFavorite: false });
     }
+    
   } catch (err) {
     console.error("Erro ao verificar favoritos:", err.message);
     return res.status(500).json({ message: "Erro ao verificar favoritos" });
   }
 });
+
 
 // Endpoint para listar favoritos de um usuário
 app.get("/favorites/:userId", (req, res) => {
