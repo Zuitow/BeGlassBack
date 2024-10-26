@@ -90,20 +90,21 @@ app.post("/login", async (req, res) => {
   try {
     console.log('Executando consulta SQL:', sql, [email, username, password]); 
     const results = await query(sql, [email, username, password]);
-  
+
     console.log("Resultado da consulta:", results);
 
-    if (results.length === 0) {
+    // Verifica se não houve resultado
+    if (results.length === 0 || results[0].length === 0) {
       console.log("Usuário ou senha incorretos");
       return res.status(404).json({ message: "Usuário ou senha incorretos" });
     }
 
+    // Acesso ao primeiro resultado corretamente
     const user = {
       id: results[0][0].userId,
       username: results[0][0].username,
-      email: results[0].email,
+      email: results[0][0].email, // Corrigido para acessar a primeira linha
     };
-
 
     console.log("Usuário no token:", user);
 
@@ -117,6 +118,7 @@ app.post("/login", async (req, res) => {
     return res.status(500).json({ message: "Erro ao realizar login" });
   }
 });
+
 
 
 // Endpoint para "Esqueci a senha"
@@ -285,7 +287,7 @@ app.get("/produtos", (req, res) => {
 // Sistema de Favoritar
 app.post("/favorites", (req, res) => {
   const { userId, productId } = req.body;
-
+  console.log("Dados recebidos:", { userId, productId })
   // Verifica se o favorito já existe
   const checkQuery = "SELECT * FROM favorites WHERE user_id = ? AND product_id = ?";
   db.query(checkQuery, [userId, productId], (err, results) => {
@@ -301,6 +303,7 @@ app.post("/favorites", (req, res) => {
     const insertQuery = "INSERT INTO favorites (user_id, product_id) VALUES (?, ?)";
     db.query(insertQuery, [userId, productId], (err) => {
       if (err) {
+        console.log("Erro ao inserir favorito:", err);
         return res.status(500).json({ error: err.message });
       }
       res.status(201).json({ message: "Produto favoritado com sucesso" });
@@ -315,10 +318,12 @@ app.get("/favorites/:userId/:productId", async (req, res) => {
 
   // Consulta SQL para verificar se o produto está favoritado
   const sql = "SELECT * FROM favorites WHERE user_id = ? AND product_id = ?";
+  console.log("Realizando consulta ", sql)
 
   try {
     const results = await query(sql, [userId, productId]); // Retorna um array de resultados
-    console.log("Resultados completos da consulta:", results[0].length); // Para debug
+    console.log("Informações da consulta: ", results)
+    console.log("Resultados da consulta:", results[0].length); // Para debug
 
 
     // Verifica se existem resultados
