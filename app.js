@@ -3,8 +3,9 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const mysql = require("mysql2");
 const cors = require("cors");
-const { query } = require('./database'); // Importando a função query
-const sendResetPasswordEmail = require("./resetMail");
+const { query } = require("./database"); // Importando a função query
+const sendResetPasswordEmail = require("./resetMail"); // Chamada do ResetDeSenha
+const sendWelcomeEmail = require("./sendMail")
 
 const app = express();
 const port = 3000;
@@ -20,11 +21,13 @@ const db = mysql.createConnection({
 });
 
 // Configuração do middleware
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 app.use(bodyParser.json());
 
@@ -33,12 +36,10 @@ app.get("/", (req, res) => {
   res.send("Página Inicial");
 });
 
-
-
 // Middleware para autenticação JWT
 const authenticateJWT = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  
+  const token = req.headers.authorization?.split(" ")[1];
+
   if (!token) {
     return res.status(403).json({ message: "Token não fornecido" });
   }
@@ -54,23 +55,23 @@ const authenticateJWT = (req, res, next) => {
 };
 
 // Rota para buscar o perfil do usuário usando callbacks
-app.get('/perfil/:username', authenticateJWT, (req, res) => {
+app.get("/perfil/:username", authenticateJWT, (req, res) => {
   const { username } = req.params;
   console.log(username);
 
   // Executa a consulta SQL diretamente
   const sql = "SELECT * FROM users WHERE username = ?";
-  
+
   db.query(sql, [username], (error, results) => {
     if (error) {
       // Tratar o erro aqui
-      console.error('Erro ao buscar o perfil do usuário:', error);
-      return res.status(500).json({ message: 'Erro ao buscar o perfil' });
+      console.error("Erro ao buscar o perfil do usuário:", error);
+      return res.status(500).json({ message: "Erro ao buscar o perfil" });
     }
 
     // Verifica se o usuário foi encontrado
     if (results.length === 0) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+      return res.status(404).json({ message: "Usuário não encontrado" });
     }
 
     // Retorna os dados do usuário encontrado
@@ -79,16 +80,16 @@ app.get('/perfil/:username', authenticateJWT, (req, res) => {
   });
 });
 
-
 // Login
 app.post("/login", async (req, res) => {
   const { email, username, password, rememberMe } = req.body; // Altere para usernameOrEmail
-  console.log('Requisição recebida:', req.body);
+  console.log("Requisição recebida:", req.body);
 
   // Consulta SQL que verifica se o username ou email corresponde
-  const sql = "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?";
+  const sql =
+    "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?";
   try {
-    console.log('Executando consulta SQL:', sql, [email, username, password]); 
+    console.log("Executando consulta SQL:", sql, [email, username, password]);
     const results = await query(sql, [email, username, password]);
 
     console.log("Resultado da consulta:", results);
@@ -119,13 +120,25 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.post("/reset-password", async (req, res) => {
+  const { email } = req.body;
+  const resetToken = jwt.sign({ email }, "seu-segredo", { expiresIn: "1h" });
+  const resetLink = `http://localhost:3000/reset/${resetToken}`;
+
+  try {
+      await sendResetPasswordEmail(email, resetLink);
+      res.status(200).send("E-mail de redefinição de senha enviado com sucesso.");
+  } catch (error) {
+      res.status(500).send("Erro ao enviar e-mail de redefinição de senha.");
+  }
+});
 
 
 // Endpoint para "Esqueci a senha"
 app.post("/esqueci-senha", async (req, res) => {
   const { email } = req.body;
   const sql = "SELECT * FROM users WHERE email = ?";
-  
+
   try {
     const [user] = await query(sql, [email]);
 
@@ -135,7 +148,9 @@ app.post("/esqueci-senha", async (req, res) => {
 
     // Gerar um token JWT com tempo de expiração
     const secret = SECRET_KEY + user.password;
-    const token = jwt.sign({ email: user.email, id: user.id }, secret, { expiresIn: "15m" });
+    const token = jwt.sign({ email: user.email, id: user.id }, secret, {
+      expiresIn: "15m",
+    });
 
     // Link de redefinição de senha (ajuste conforme o endereço do seu site)
     const resetLink = `http://localhost:3000/reset-senha/${user.id}/${token}`;
@@ -143,7 +158,9 @@ app.post("/esqueci-senha", async (req, res) => {
     // Enviar e-mail com o link de redefinição
     await sendResetPasswordEmail(email, resetLink);
 
-    res.status(200).json({ message: "E-mail de redefinição enviado com sucesso!" });
+    res
+      .status(200)
+      .json({ message: "E-mail de redefinição enviado com sucesso!" });
   } catch (error) {
     console.error("Erro ao processar solicitação:", error);
     res.status(500).json({ message: "Erro ao processar solicitação" });
@@ -151,7 +168,7 @@ app.post("/esqueci-senha", async (req, res) => {
 });
 
 // Endpoint para resetar a senha
-app.post('/reset-senha/:id/:token', async (req, res) => {
+app.post("/reset-senha/:id/:token", async (req, res) => {
   const { id, token } = req.params;
   const { newPassword } = req.body;
 
@@ -184,48 +201,63 @@ app.post('/reset-senha/:id/:token', async (req, res) => {
 });
 
 // Cadastrar Usuário
-app.post("/usuarios", (req, res) => {
+app.post("/usuarios", async (req, res) => {
   const { username, email, password } = req.body;
 
   console.log("Recebendo dados de cadastro:", { username, email, password });
 
-  const isGmail = email.endsWith('@gmail.com');
   const isValidPassword = password.length >= 8;
+  const isValidEmail = (email) => {
+    // Expressão regular para verificar se o e-mail é válido
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@(gmail\.com|hotmail\.com|gmx\.[a-z]{2,3})$/;
+    return emailPattern.test(email);
+  };
 
   if (!username || !email || !password) {
     console.log("Erro: Todos os campos são obrigatórios.");
     return res.status(400).send("Todos os campos são obrigatórios.");
   }
 
-  if (!isGmail) {
-    console.log("Erro: O email não é um @gmail.com.", { email });
-    return res.status(400).send("O email deve ser um @gmail.com.");
+  // Verifica se o e-mail é válido
+  if (!isValidEmail(email)) {
+    console.log("Erro: O email não é válido.", { email });
+    return res.status(400).send("O email deve ser um gmail.com, hotmail.com ou gmx.com.");
   }
 
   if (!isValidPassword) {
-    console.log("Erro: A senha é muito curta.", { passwordLength: password.length });
+    console.log("Erro: A senha é muito curta.", {
+      passwordLength: password.length,
+    });
     return res.status(400).send("A senha deve ter no mínimo 8 caracteres.");
   }
 
   // Consulta SQL para inserir os dados do usuário na tabela 'users'
   const sql = `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`;
 
-  db.query(sql, [username, email, password], (error, results) => {
+  db.query(sql, [username, email, password], async (error, results) => {
     if (error) {
       console.log("Erro ao inserir usuário:", error);
-      return res.status(500).send("Erro ao cadastrar o usuário. Tente novamente.");
+      return res
+        .status(500)
+        .send("Erro ao cadastrar o usuário. Tente novamente.");
     }
 
     console.log("Usuário cadastrado com sucesso:", results);
+    
+    // Chama a função para enviar o e-mail de boas-vindas
+    await sendWelcomeEmail(email);
+
     return res.status(200).send("Usuário cadastrado com sucesso.");
   });
 });
+
 
 // Envio de reviews
 app.post("/reviews", (req, res) => {
   const { autor, produto, comentario, nota } = req.body;
 
-  const sql = "INSERT INTO reviews (autor, produto, comentario, nota) VALUES (?, ?, ?, ?)";
+  const sql =
+    "INSERT INTO reviews (autor, produto, comentario, nota) VALUES (?, ?, ?, ?)";
   db.query(sql, [autor, produto, comentario, nota], (err) => {
     if (err) {
       return res.status(500).send("Erro ao enviar Review");
@@ -244,8 +276,6 @@ app.get("/reviews/:id", async (req, res) => {
     return res.status(500).send("Erro ao buscar reviews");
   }
 });
-
-
 
 // Cadastrar Administrador
 app.post("/admins", (req, res) => {
@@ -287,9 +317,10 @@ app.get("/produtos", (req, res) => {
 // Sistema de Favoritar
 app.post("/favorites", (req, res) => {
   const { userId, productId } = req.body;
-  console.log("Dados recebidos:", { userId, productId })
+  console.log("Dados recebidos:", { userId, productId });
   // Verifica se o favorito já existe
-  const checkQuery = "SELECT * FROM favorites WHERE user_id = ? AND product_id = ?";
+  const checkQuery =
+    "SELECT * FROM favorites WHERE user_id = ? AND product_id = ?";
   db.query(checkQuery, [userId, productId], (err, results) => {
     if (err) {
       return res.status(500).json({ error: err.message });
@@ -300,7 +331,8 @@ app.post("/favorites", (req, res) => {
     }
 
     // Insere o favorito
-    const insertQuery = "INSERT INTO favorites (user_id, product_id) VALUES (?, ?)";
+    const insertQuery =
+      "INSERT INTO favorites (user_id, product_id) VALUES (?, ?)";
     db.query(insertQuery, [userId, productId], (err) => {
       if (err) {
         console.log("Erro ao inserir favorito:", err);
@@ -311,36 +343,32 @@ app.post("/favorites", (req, res) => {
   });
 });
 
-
 //Verificar se está favoritado
 app.get("/favorites/:userId/:productId", async (req, res) => {
   const { userId, productId } = req.params;
 
   // Consulta SQL para verificar se o produto está favoritado
   const sql = "SELECT * FROM favorites WHERE user_id = ? AND product_id = ?";
-  console.log("Realizando consulta ", sql)
+  console.log("Realizando consulta ", sql);
 
   try {
     const results = await query(sql, [userId, productId]); // Retorna um array de resultados
-    console.log("Informações da consulta: ", results)
+    console.log("Informações da consulta: ", results);
     console.log("Resultados da consulta:", results[0].length); // Para debug
-
 
     // Verifica se existem resultados
     if (results[0].length > 0) {
-      console.log("Produto está favoritado.", );
+      console.log("Produto está favoritado.");
       return res.status(200).json({ isFavorite: true });
     } else {
-      console.log("Produto não está favoritado.",);
+      console.log("Produto não está favoritado.");
       return res.status(200).json({ isFavorite: false });
     }
-    
   } catch (err) {
     console.error("Erro ao verificar favoritos:", err.message);
     return res.status(500).json({ message: "Erro ao verificar favoritos" });
   }
 });
-
 
 // Endpoint para listar favoritos de um usuário
 app.get("/favorites/:userId", (req, res) => {
@@ -369,7 +397,9 @@ app.delete("/favorites", (req, res) => {
     if (results.affectedRows === 0) {
       return res.status(404).json({ message: "Favorito não encontrado" });
     }
-    res.status(200).json({ message: "Produto removido dos favoritos com sucesso" });
+    res
+      .status(200)
+      .json({ message: "Produto removido dos favoritos com sucesso" });
   });
 });
 
@@ -401,7 +431,7 @@ app.get("/procurarReviews", (req, res) => {
 app.get("/notas/:id", (req, res) => {
   const { id } = req.params;
   const sql = "SELECT AVG(nota) as mediaNota FROM reviews WHERE produto = ?"; // Calcula a média das notas
-  
+
   db.query(sql, [id], (err, result) => {
     if (err) {
       console.error("Erro ao buscar notas:", err);

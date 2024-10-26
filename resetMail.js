@@ -1,34 +1,27 @@
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  host: "smtp.gmail.com",
-  port: 465,
-  secure: true,
-  auth: {
-    user: 'beglass20@gmail.com',
-    pass: 'pkpr invm cagl hejc', // Lembre-se de armazenar isso em variáveis de ambiente
-  }
-});
+const sendResetPasswordEmail = async (email, resetLink) => {
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: "beglass20@gmail.com",
+            pass: "sua-senha-aqui",
+        },
+    });
 
-async function sendResetPasswordEmail(email, resetLink) {
-  const mailOptions = {
-    from: {
-      name: 'BeGlass',
-      address: 'beglass20@gmail.com'
-    },
-    to: email, // Destinatário
-    subject: "Redefinição de senha",
-    text: `Você solicitou a redefinição de sua senha. Clique no link para redefinir: ${resetLink}`,
-    html: `<p>Você solicitou a redefinição de sua senha.</p><p><a href="${resetLink}">Clique aqui para redefinir sua senha</a></p>`,
-  };
+    const mailOptions = {
+        from: "beglass20@gmail.com",
+        to: email,
+        subject: "Redefinição de senha",
+        html: `<p>Para redefinir sua senha, clique no link abaixo:</p><a href="${resetLink}">Redefinir Senha</a>`,
+    };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log("E-mail de redefinição de senha enviado!");
-  } catch (error) {
-    console.error("Erro ao enviar e-mail:", error);
-  }
-}
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log("E-mail de redefinição de senha enviado com sucesso!");
+    } catch (error) {
+        console.error("Erro ao enviar o e-mail:", error);
+    }
+};
 
 module.exports = sendResetPasswordEmail;
