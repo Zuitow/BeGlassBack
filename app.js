@@ -370,21 +370,27 @@ app.get("/favorites/:userId/:productId", async (req, res) => {
   }
 });
 
-// Endpoint para listar favoritos de um usuário
-app.get("/favorites/:userId", (req, res) => {
-  const query = `
-      SELECT p.id, p.name, p.description
-      FROM products p
-      JOIN favorites f ON p.id = f.product_id
-      WHERE f.user_id = ?
-  `;
-  db.query(query, [req.params.userId], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.status(200).json(results);
-  });
+//Listar Favoritos do usuário
+app.get("/favorites/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const sql = `SELECT * FROM favorites WHERE user_id = ?`; 
+    db.query(sql, [userId], (error, results) => {
+      if (error) {
+        console.error("Erro ao buscar favoritos:", error);
+        return res.status(500).send("Erro ao buscar favoritos.");
+      }
+      console.log("Dados Recebidos com sucesso.", results)
+      res.status(200).json(results);
+    });
+  } catch (error) {
+    console.error("Erro interno:", error);
+    res.status(500).send("Erro interno do servidor.");
+  }
 });
+
+
 
 // Deletar Favoritos
 app.delete("/favorites", (req, res) => {
@@ -428,6 +434,7 @@ app.get("/procurarReviews", (req, res) => {
   });
 });
 
+//Endpoint para receber as notas de algum produto
 app.get("/notas/:id", (req, res) => {
   const { id } = req.params;
   const sql = "SELECT AVG(nota) as mediaNota FROM reviews WHERE produto = ?"; // Calcula a média das notas
