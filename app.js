@@ -3,7 +3,11 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const mysql = require("mysql2");
 const cors = require("cors");
+const crypto = require('crypto');
+
 const { query } = require("./database"); // Importando a função query
+
+//Puxar os componentes
 const sendResetPasswordEmail = require("./resetMail"); // Chamada do ResetDeSenha
 const sendWelcomeEmail = require("./sendMail")
 
@@ -35,6 +39,11 @@ app.use(bodyParser.json());
 app.get("/", (req, res) => {
   res.send("Página Inicial");
 });
+
+
+function gerarCodigoVerificacao() {
+  return crypto.randomInt(100000, 999999).toString(); // Gera um número aleatório de 6 dígitos
+}
 
 // Middleware para autenticação JWT
 const authenticateJWT = (req, res, next) => {
