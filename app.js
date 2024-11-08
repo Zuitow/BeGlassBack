@@ -10,6 +10,7 @@ const { query } = require("./database"); // Importando a função query
 //Puxar os componentes
 const sendResetPasswordEmail = require("./resetMail"); // Chamada do ResetDeSenha
 const sendWelcomeEmail = require("./sendMail")
+const verifyToken = require("./verificarToken")
 
 const app = express();
 const port = 3000;
