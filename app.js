@@ -2,8 +2,11 @@ const bodyParser = require("body-parser");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const mysql = require("mysql2");
+const path = require("path");
+const fs = require("fs")
 const cors = require("cors");
 const crypto = require('crypto');
+const multer = require('multer');
 
 const { query } = require("./database"); // Importando a função query
 
@@ -35,6 +38,32 @@ app.use(
 );
 
 app.use(bodyParser.json());
+
+
+// Criação da pasta "uploads" se não existir
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir); // Cria a pasta "uploads"
+}
+
+// Servir arquivos estáticos (imagens) da pasta 'uploads'
+app.use('/uploads', express.static(uploadDir));
+
+// Configuração do Multer para salvar arquivos na pasta "uploads"
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir); // Define o diretório onde os arquivos serão salvos
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname); // Extensão do arquivo
+    const uniqueName = Date.now() + ext; // Nome único baseado no timestamp
+    cb(null, uniqueName); // Nome final do arquivo
+  },
+});
+
+
+const upload = multer({ storage: storage });
+
 
 // Rota simples para testar a conexão
 app.get("/", (req, res) => {
@@ -89,6 +118,60 @@ app.get("/perfil/:username", authenticateJWT, (req, res) => {
     console.log(results);
   });
 });
+
+
+
+// Endpoint para atualizar a foto do usuário e salvar a imagem
+app.post('/upload', authenticateJWT, upload.single('foto'), (req, res) => {
+  console.log('Requisição recebida para atualizar a foto de perfil.');
+
+  // Verifique se um arquivo foi enviado
+  if (!req.file) {
+    console.error('Erro: Nenhuma imagem foi enviada.');
+    return res.status(400).json({ message: 'Nenhuma imagem foi enviada' });
+  }
+
+  // Log o nome do arquivo enviado
+  console.log('Arquivo recebido:', req.file.originalname);
+
+  // Obtenha o nome do arquivo salvo
+  const fotoUrl = `/uploads/${req.file.filename}`;
+
+  // Log para verificar a URL da foto
+  console.log('URL da foto gerada:', fotoUrl);
+
+  // ID do usuário está no payload do token JWT
+  const userId = req.user.id; // Pegando o ID diretamente do token
+
+  console.log('ID do usuário recebido do token:', userId);
+
+  if (!userId) {
+    console.error('Erro: ID do usuário não encontrado no token.');
+    return res.status(400).json({ message: 'ID do usuário não encontrado' });
+  }
+
+  console.log(typeof userId);
+  console.log(userId);
+  console.log(fotoUrl);
+  // Atualizar o campo 'foto' na tabela 'users'
+  const query = 'UPDATE users SET foto = ? WHERE userId = ?';
+  db.query(query, [fotoUrl, userId], (err, result) => {
+    if (err) {
+      console.error('Erro ao atualizar foto no banco de dados:', err);
+      return res.status(500).json({ message: 'Erro ao atualizar foto no banco de dados' });
+    }
+
+    console.log("Foto atualizada com sucesso para o usuário ID:", userId);
+    
+    // Resposta de sucesso
+    res.json({
+      message: 'Foto atualizada com sucesso!',
+      file: req.file,
+      fotoUrl: fotoUrl, // URL da foto para ser usada no frontend
+    });
+  });
+});
+
 
 // Login
 app.post("/login", async (req, res) => {
