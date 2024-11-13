@@ -40,14 +40,29 @@ app.use(
 app.use(bodyParser.json());
 
 
-// Criação da pasta "uploads" se não existir
+// Criação da pasta "uploads" e subpastas se não existirem
 const uploadDir = path.join(__dirname, 'uploads');
+const usersDir = path.join(uploadDir, 'users');
+const ingredientsDir = path.join(uploadDir, 'ingredients');
+
+// Verifica se as pastas existem, senão cria
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir); // Cria a pasta "uploads"
+  fs.mkdirSync(uploadDir);  // Cria a pasta "uploads"
+}
+if (!fs.existsSync(usersDir)) {
+  fs.mkdirSync(usersDir);  // Cria a pasta "users"
+}
+if (!fs.existsSync(ingredientsDir)) {
+  fs.mkdirSync(ingredientsDir);  // Cria a pasta "ingredients"
 }
 
-// Servir arquivos estáticos (imagens) da pasta 'uploads'
-app.use('/uploads', express.static(uploadDir));
+
+
+// Servir arquivos estáticos (imagens) da pasta 'uploads/users' para fotos de usuários
+app.use('/uploads/users', express.static(usersDir));
+
+// Servir arquivos estáticos (imagens) da pasta 'uploads/ingredients' para imagens de ingredientes
+app.use('/uploads/ingredients', express.static(ingredientsDir));
 
 // Configuração do Multer para salvar arquivos na pasta "uploads"
 const storage = multer.diskStorage({
@@ -121,7 +136,7 @@ app.get("/perfil/:username", authenticateJWT, (req, res) => {
 
 
 
-// Endpoint para atualizar a foto do usuário e salvar a imagem
+// Rota para upload da foto de perfil do usuário
 app.post('/upload', authenticateJWT, upload.single('foto'), (req, res) => {
   console.log('Requisição recebida para atualizar a foto de perfil.');
 
@@ -131,28 +146,19 @@ app.post('/upload', authenticateJWT, upload.single('foto'), (req, res) => {
     return res.status(400).json({ message: 'Nenhuma imagem foi enviada' });
   }
 
-  // Log o nome do arquivo enviado
-  console.log('Arquivo recebido:', req.file.originalname);
-
   // Obtenha o nome do arquivo salvo
-  const fotoUrl = `/uploads/${req.file.filename}`;
+  const fotoUrl = `/uploads/users/${req.file.filename}`; // Caminho para a imagem do usuário
 
-  // Log para verificar a URL da foto
   console.log('URL da foto gerada:', fotoUrl);
 
   // ID do usuário está no payload do token JWT
   const userId = req.user.id; // Pegando o ID diretamente do token
-
-  console.log('ID do usuário recebido do token:', userId);
 
   if (!userId) {
     console.error('Erro: ID do usuário não encontrado no token.');
     return res.status(400).json({ message: 'ID do usuário não encontrado' });
   }
 
-  console.log(typeof userId);
-  console.log(userId);
-  console.log(fotoUrl);
   // Atualizar o campo 'foto' na tabela 'users'
   const query = 'UPDATE users SET foto = ? WHERE userId = ?';
   db.query(query, [fotoUrl, userId], (err, result) => {
@@ -171,7 +177,6 @@ app.post('/upload', authenticateJWT, upload.single('foto'), (req, res) => {
     });
   });
 });
-
 
 // Login
 app.post("/login", async (req, res) => {
@@ -225,6 +230,41 @@ app.post("/reset-password", async (req, res) => {
       res.status(500).send("Erro ao enviar e-mail de redefinição de senha.");
   }
 });
+
+
+// Endpoint para "Esqueci a senha"
+app.post("/esqueci-senha", async (req, res) => {
+  const { email } = req.body;
+  const sql = "SELECT * FROM users WHERE email = ?";
+
+  try {
+    const [user] = await query(sql, [email]);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    // Gerar um token JWT com tempo de expiração
+    const secret = SECRET_KEY + user.password;
+    const token = jwt.sign({ email: user.email, id: user.id }, secret, {
+      expiresIn: "15m",
+    });
+
+    // Link de redefinição de senha (ajuste conforme o endereço do seu site)
+    const resetLink = `http://localhost:3000/reset-senha/${user.id}/${token}`;
+
+    // Enviar e-mail com o link de redefinição
+    await sendResetPasswordEmail(email, resetLink);
+
+    res
+      .status(200)
+      .json({ message: "E-mail de redefinição enviado com sucesso!" });
+  } catch (error) {
+    console.error("Erro ao processar solicitação:", error);
+    res.status(500).json({ message: "Erro ao processar solicitação" });
+  }
+});
+
 
 // Endpoint para buscar receitas pelo id_prod
 app.get('/recipes/:id_prod', (req, res) => {
@@ -281,6 +321,8 @@ app.post("/esqueci-senha", async (req, res) => {
     res.status(500).json({ message: "Erro ao processar solicitação" });
   }
 });
+
+
 
 // Endpoint para resetar a senha
 app.post("/reset-senha/:id/:token", async (req, res) => {
