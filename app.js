@@ -226,6 +226,28 @@ app.post("/reset-password", async (req, res) => {
   }
 });
 
+// Endpoint para buscar receitas pelo id_prod
+app.get('/recipes/:id_prod', (req, res) => {
+  const id_prod = req.params.id_prod;
+
+  // Consulta SQL para buscar as receitas onde id_prod seja igual ao fornecido
+  const query = 'SELECT * FROM recipes WHERE id_prod = ?';
+
+  // Executando a consulta
+  db.query(query, [id_prod], (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar as receitas:', err);
+      return res.status(500).json({ message: 'Erro ao buscar as receitas' });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'Nenhuma receita encontrada para esse produto' });
+    }
+
+    // Retornar os resultados como JSON
+    res.status(200).json(results);
+  });
+});
 
 // Endpoint para "Esqueci a senha"
 app.post("/esqueci-senha", async (req, res) => {
