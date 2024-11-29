@@ -510,7 +510,7 @@ app.get("/favorites/:userId/:productId", async (req, res) => {
 
   try {
     const results = await query(sql, [userId, productId]); // Retorna um array de resultados
-    console.log("Informações da consulta: ", results);
+    console.log("Informações da consulta: ", results[0]);
     console.log("Resultados da consulta:", results[0].length); // Para debug
 
     // Verifica se existem resultados
