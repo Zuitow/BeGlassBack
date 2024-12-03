@@ -11,7 +11,7 @@ const multer = require('multer');
 const { query } = require("./database"); // Importando a função query
 
 //Puxar os componentes
-const sendResetPasswordEmail = require("./resetMail"); // Chamada do ResetDeSenha
+const sendRecoveryEmail = require("./resetMail"); // Chamada do ResetDeSenha
 const sendWelcomeEmail = require("./sendMail")
 const verifyToken = require("./verificarToken")
 
@@ -118,8 +118,6 @@ const authenticateJWT = (req, res, next) => {
 // Rota para buscar o perfil do usuário usando callbacks
 app.get("/perfil/:username", authenticateJWT, (req, res) => {
   const { username } = req.params;
-  console.log(username);
-
   // Executa a consulta SQL diretamente
   const sql = "SELECT * FROM users WHERE username = ?";
 
@@ -137,7 +135,6 @@ app.get("/perfil/:username", authenticateJWT, (req, res) => {
 
     // Retorna os dados do usuário encontrado
     res.status(200).json(results[0]);
-    console.log(results);
   });
 });
 
@@ -232,7 +229,7 @@ app.post("/reset-password", async (req, res) => {
   const resetLink = `http://localhost:3000/reset/${resetToken}`;
 
   try {
-      await sendResetPasswordEmail(email, resetLink);
+      await sendRecoveryEmail(email, resetLink);
       res.status(200).send("E-mail de redefinição de senha enviado com sucesso.");
   } catch (error) {
       res.status(500).send("Erro ao enviar e-mail de redefinição de senha.");
@@ -243,35 +240,80 @@ app.post("/reset-password", async (req, res) => {
 // Endpoint para "Esqueci a senha"
 app.post("/esqueci-senha", async (req, res) => {
   const { email } = req.body;
-  const sql = "SELECT * FROM users WHERE email = ?";
+  const sqlFind = "SELECT * FROM users WHERE email = ?";
+  const sqlUpdate = "UPDATE users SET reset_code = ?, reset_code_expires = ? WHERE email = ?";
 
   try {
-    const [user] = await query(sql, [email]);
-
+    const [user] = await query(sqlFind, [email]);
     if (!user) {
       return res.status(404).json({ message: "Usuário não encontrado" });
     }
 
-    // Gerar um token JWT com tempo de expiração
-    const secret = SECRET_KEY + user.password;
-    const token = jwt.sign({ email: user.email, id: user.id }, secret, {
-      expiresIn: "15m",
-    });
+    // Gerar o código de 6 dígitos e a validade (ex.: 15 minutos a partir de agora)
+    const resetCode = gerarCodigoVerificacao();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
-    // Link de redefinição de senha (ajuste conforme o endereço do seu site)
-    const resetLink = `http://localhost:3000/reset-senha/${user.id}/${token}`;
+    // Atualizar no banco
+    await query(sqlUpdate, [resetCode, expiresAt, email]);
 
-    // Enviar e-mail com o link de redefinição
-    await sendResetPasswordEmail(email, resetLink);
+    // Enviar o código ao usuário por e-mail
+    await sendRecoveryEmail(email, resetCode);
 
-    res
-      .status(200)
-      .json({ message: "E-mail de redefinição enviado com sucesso!" });
+    res.status(200).json({ message: "Código de recuperação enviado ao e-mail." });
   } catch (error) {
     console.error("Erro ao processar solicitação:", error);
     res.status(500).json({ message: "Erro ao processar solicitação" });
   }
 });
+
+
+// Endpoint para verificar o código de recuperação
+app.post("/verificar-codigo", async (req, res) => {
+  const { email, code } = req.body;
+
+  const sqlFind = "SELECT * FROM users WHERE email = ? AND reset_code = ?";
+
+  try {
+    // Busca o usuário com o e-mail e código fornecido
+    const [user] = await query(sqlFind, [email, code]);
+
+    // Verifica se o usuário existe e se o código não expirou
+    if (!user || new Date() > new Date(user.reset_code_expires)) {
+      return res.status(400).json({ message: "Código inválido ou expirado." });
+    }
+
+    res.status(200).json({ message: "Código verificado com sucesso. Agora defina sua nova senha." });
+  } catch (error) {
+    console.error("Erro ao verificar código:", error);
+    res.status(500).json({ message: "Erro ao verificar código." });
+  }
+});
+
+
+// Endpoint para atualizar a senha após a verificação do código
+app.post("/alterar-senha", async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  // SQL para atualizar a senha e limpar o código de recuperação
+  const sqlUpdate = `
+    UPDATE users 
+    SET password = ?, reset_code = NULL, reset_code_expires = NULL 
+    WHERE email = ?`;
+
+  try {
+    // Atualiza a senha no banco de dados
+    await query(sqlUpdate, [newPassword, email]);
+
+    res.status(200).json({ message: "Senha alterada com sucesso." });
+  } catch (error) {
+    console.error("Erro ao alterar senha:", error);
+    res.status(500).json({ message: "Erro ao alterar senha." });
+  }
+});
+
+
+
+
 
 
 // Endpoint para buscar receitas pelo id_prod
@@ -319,7 +361,7 @@ app.post("/esqueci-senha", async (req, res) => {
     const resetLink = `http://localhost:3000/reset-senha/${user.id}/${token}`;
 
     // Enviar e-mail com o link de redefinição
-    await sendResetPasswordEmail(email, resetLink);
+    await sendRecoveryEmail(email, resetLink);
 
     res
       .status(200)
