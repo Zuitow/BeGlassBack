@@ -67,7 +67,14 @@ app.use('/uploads/ingredients', express.static(ingredientsDir));
 // Configuração do Multer para salvar arquivos na pasta "uploads"
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir); // Define o diretório onde os arquivos serão salvos
+    // Verifica a rota ou categoria e salva na pasta correspondente
+    if (req.path.includes('/upload')) {
+      cb(null, usersDir); // Salva na pasta 'uploads/users' para fotos de usuários
+    } else if (req.path.includes('/ingredients')) {
+      cb(null, ingredientsDir); // Salva na pasta 'uploads/ingredients' para imagens de ingredientes
+    } else {
+      cb(null, uploadDir); // Fallback para a pasta principal 'uploads'
+    }
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname); // Extensão do arquivo
@@ -76,8 +83,8 @@ const storage = multer.diskStorage({
   },
 });
 
-
 const upload = multer({ storage: storage });
+
 
 
 // Rota simples para testar a conexão
@@ -146,10 +153,9 @@ app.post('/upload', authenticateJWT, upload.single('foto'), (req, res) => {
     return res.status(400).json({ message: 'Nenhuma imagem foi enviada' });
   }
 
-  // Obtenha o nome do arquivo salvo
-  const fotoUrl = `/uploads/users/${req.file.filename}`; // Caminho para a imagem do usuário
-
-  console.log('URL da foto gerada:', fotoUrl);
+  // O nome do arquivo gerado pelo Multer
+  const fileName = req.file.filename; // Salve apenas o nome do arquivo
+  console.log('Nome da imagem gerada:', fileName);
 
   // ID do usuário está no payload do token JWT
   const userId = req.user.id; // Pegando o ID diretamente do token
@@ -159,9 +165,9 @@ app.post('/upload', authenticateJWT, upload.single('foto'), (req, res) => {
     return res.status(400).json({ message: 'ID do usuário não encontrado' });
   }
 
-  // Atualizar o campo 'foto' na tabela 'users'
-  const query = 'UPDATE users SET foto = ? WHERE userId = ?';
-  db.query(query, [fotoUrl, userId], (err, result) => {
+  // Atualizar o campo 'foto' na tabela 'users' com apenas o nome da imagem
+  const query = 'UPDATE users SET userImage = ? WHERE userId = ?';
+  db.query(query, [fileName, userId], (err, result) => {
     if (err) {
       console.error('Erro ao atualizar foto no banco de dados:', err);
       return res.status(500).json({ message: 'Erro ao atualizar foto no banco de dados' });
@@ -173,10 +179,12 @@ app.post('/upload', authenticateJWT, upload.single('foto'), (req, res) => {
     res.json({
       message: 'Foto atualizada com sucesso!',
       file: req.file,
-      fotoUrl: fotoUrl, // URL da foto para ser usada no frontend
+      fotoUrl: `/uploads/users/${fileName}`, // A URL gerada será apenas o nome do arquivo
     });
   });
 });
+
+
 
 // Login
 app.post("/login", async (req, res) => {
@@ -463,6 +471,17 @@ app.get("/usuarios/:username", async (req, res) => {
 // Coletar dados bebidas
 app.get("/produtos", (req, res) => {
   const sql = "SELECT * FROM products";
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).send("Erro ao buscar os produtos");
+    }
+    res.json(results);
+  });
+});
+
+// Coletar dados bebidas
+app.get("/comofazer", (req, res) => {
+  const sql = "SELECT comofazer FROM products";
   db.query(sql, (err, results) => {
     if (err) {
       return res.status(500).send("Erro ao buscar os produtos");
