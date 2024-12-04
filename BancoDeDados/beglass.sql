@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Tempo de geração: 27/11/2024 às 12:00
+-- Tempo de geração: 04/12/2024 às 13:41
 -- Versão do servidor: 10.4.32-MariaDB
 -- Versão do PHP: 8.1.25
 
@@ -58,29 +58,7 @@ CREATE TABLE `favorites` (
 --
 
 INSERT INTO `favorites` (`id`, `user_id`, `product_id`) VALUES
-(6, 43, 1),
-(7, 43, 3),
-(8, 43, 11),
-(9, 43, 12),
-(10, 43, 19),
-(11, 43, 20),
-(12, 44, 1),
-(14, 44, 5),
-(15, 44, 11),
-(17, 45, 1),
-(30, 45, 2),
-(16, 45, 3),
-(29, 45, 15),
-(19, 46, 1),
-(20, 46, 2),
-(21, 46, 3),
-(26, 46, 8),
-(22, 46, 11),
-(23, 46, 13),
-(27, 46, 16),
-(28, 46, 18),
-(24, 46, 21),
-(25, 46, 22);
+(37, 68, 1);
 
 -- --------------------------------------------------------
 
@@ -189,7 +167,151 @@ INSERT INTO `recipes` (`id`, `id_prod`, `ingredient`, `amount`, `imagem`) VALUES
 (35, 7, 'Suco de Abacaxi', '200ml', 'Pineapple.png'),
 (36, 7, 'Leite Condensado', '3 Colheres', 'CondensedMilk.png'),
 (37, 7, 'Gelo', 'Opcional', 'Ice.png'),
-(38, 8, 'Suco de Abacaxi', '100ml', 'Pineapple.png');
+(38, 8, 'Suco de Abacaxi', '100ml', 'Pineapple.png'),
+(39, 5, 'Xarope Groselha', '25ml', 'Gooseberry.png'),
+(40, 5, 'Açúcar', 'opcional', 'Sugar.png'),
+(41, 5, 'Gelo', 'opcional', 'Ice.png'),
+(42, 6, 'Água com Gás', '350ml', 'SparklingWater.png'),
+(43, 6, 'Limão', '1 Inteiro', 'Lemon.png'),
+(44, 6, 'Hortelã', '3 ramos', 'Mint.png'),
+(45, 6, 'Açúcar', 'a gosto', 'Sugar.png'),
+(46, 6, 'Gelo', 'Opcional', 'Ice.png'),
+(47, 7, 'Leite de Coco', '200ml', 'CoconutMilk.png'),
+(48, 7, 'Suco de Abacaxi', '200ml', 'Pineapple.png'),
+(49, 7, 'Leite Condensado', '3 colheres', 'CondensedMilk.png'),
+(50, 7, 'Gelo', 'opcional', 'Ice.png'),
+(51, 8, 'Suco de Abacaxi', '100ml', 'Pineapple.png'),
+(52, 8, 'Leite de Coco', '100ml', 'CoconutMilk.png'),
+(53, 8, 'Curaçau Blue', '100ml', 'CuraçaoBlue.png'),
+(54, 8, 'Açúcar', 'a gosto', 'Sugar.png'),
+(55, 8, 'Gelo', 'opcional', 'Ice.png'),
+(56, 9, 'Xarope de Flor de Sabugueiro', '20ml', 'ElderFlowerSyrup.png'),
+(57, 9, 'Suco de Limão-Siciliano', '30ml', 'Sicilian.png'),
+(58, 9, 'Xarope Natural', '20ml', 'NaturalSyrup.png'),
+(59, 9, 'Água com Gás', '150ml', 'SparklingWater.png'),
+(60, 9, 'Framboesa', '2 Framboesas', 'Raspberry.png'),
+(61, 9, 'Flor Comestível', '1 Flor', 'Flowers.png'),
+(62, 9, 'Gelo', 'opcional', 'Ice.png'),
+(63, 10, 'Melancia', '300g', 'Watermelon.png'),
+(64, 10, 'Water.png', '200ml', 'Water.png'),
+(65, 10, 'Xarope Natural', '100ml', 'NaturalSyrup.png'),
+(66, 10, 'Suco de Limão', '40ml', 'Lemon.png'),
+(67, 10, 'Água com Gás', '360ml', 'SparklingWater.png'),
+(68, 10, 'Hortelã', '4 ramos', 'Mint.png'),
+(69, 11, 'Café Solúvel', '1 Colher de Chá', 'SolubleCoffe.png'),
+(70, 11, 'Cacau em pó', '1 colher', 'Cocoa.png'),
+(71, 11, 'Leite em Pó', '2 em pó', 'MilkPowder.png'),
+(72, 11, 'Leite', '150ml', 'Milk.png'),
+(73, 11, 'Açúcar', 'a gosto', 'Sugar.png'),
+(74, 11, 'Canela', 'opcional', 'Cinnamon.png'),
+(75, 12, 'Sorvete de Baunilha', '2 bolas', 'IceCream.png'),
+(76, 12, 'Café', '3/4 Xícara', 'Coffe.png'),
+(77, 12, 'Chocolate Ralado', 'opcional', 'Chocolate.png'),
+(78, 13, 'Leite', '150ml', 'Milk.png'),
+(79, 13, 'Leite em pó', '2 colheres de sopa', 'MilkPowder.png'),
+(80, 13, 'Café Solúvel', '1 colher de sopa', 'SolubleCoffe.png'),
+(81, 13, 'Cacau em pó', '2 colheres', 'Cocoa.png'),
+(82, 13, 'Amido de Milho', '1 colher de chá', 'CornStarch.png'),
+(83, 13, 'Açúcar', 'a gosto', 'Sugar.png'),
+(84, 13, 'Canela', 'opcional', 'Cinnamon.png'),
+(85, 14, 'Café', '50ml', 'Coffe.png'),
+(86, 14, 'Leite', '110ml quente', 'Milk.png'),
+(87, 14, 'Espuma de Leite', 'a gosto', 'MilkFoam.png'),
+(88, 14, 'Açúcar', 'a gosto', 'Sugar.png'),
+(89, 15, 'Café Solúvel', '1 colher de sopa', 'SolubleCoffe.png'),
+(90, 15, 'Água', '100ml fervendo', 'Water.png'),
+(91, 15, 'Leite', '100ml', 'Milk.png'),
+(92, 15, 'Açúcar', 'a gosto', 'Sugar.png'),
+(93, 15, 'Cobertura de Sorvete', 'opcional', 'IceCreamSauce.png'),
+(136, 16, 'Leite Condensado', '1 lata', 'CondensedMilk.png'),
+(137, 16, 'Café Solúvel', '2 colheres', 'SolubleCoffe.png'),
+(138, 16, 'Gelo', '10 cubos', 'Ice.png'),
+(139, 16, 'Sorvete de Creme', '4 bolas', 'IceCream.png'),
+(140, 16, 'Água', '1/2 xícara ou 125ml', 'Water.png'),
+(141, 16, 'Chantilly', 'opcional', 'MilkFoam.png'),
+(142, 17, 'Café Gelado', '250ml', 'Coffe.png'),
+(143, 17, 'Banana Congelada', '1 Banana', 'FrozenBanana.png'),
+(144, 17, 'Leite', '1/2 Xícara', 'Milk.png'),
+(145, 17, 'Açúcar', 'a gosto', 'Sugar.png'),
+(146, 17, 'Gelo', 'opcional', 'Ice.png'),
+(147, 18, 'Cacau em pó', '100g', 'Cocoa.png'),
+(148, 18, 'Água', '100ml', 'Water.png'),
+(149, 18, 'Açúcar', 'a gosto', 'Sugar.png'),
+(150, 18, 'Gelo', '6 cubos', 'Ice.png'),
+(151, 18, 'Leite', '150ml', 'Milk.png'),
+(152, 18, 'Café Gelado', '150ml Gelado', 'Coffe.png'),
+(153, 18, 'Chantilly', 'opcional', 'MilkFoam.png'),
+(154, 19, 'Café Moido', '1 colher de sopa', 'CoffePowder.png'),
+(155, 19, 'Água Quente', '100 a 150ml', 'Water.png'),
+(156, 19, 'Açúcar', 'a gosto', 'Sugar.png'),
+(166, 20, 'Leite', '1 copo(a medida que quiser)', 'Milk.png'),
+(167, 20, 'Gelo', '6 cubos', 'Ice.png'),
+(168, 20, 'Café Solúvel', '1 colher de sopa', 'SolubleCoffe.png'),
+(169, 20, 'Açúcar', '1 colher de sopa', 'Sugar.png'),
+(170, 20, 'Açúcar', '1 colher de sopa', 'Sugar.png'),
+(171, 20, 'Água Quente', '1 colher', 'Water.png'),
+(172, 20, 'Leite Condensado', '2 colheres de sopa', 'CondensedMilk.png'),
+(173, 20, 'Leite em pó', '2 colheres de sopa', 'MilkPowder.png'),
+(174, 18, 'Essência de baunilha', 'opcional', 'VanillaEssence.png'),
+(175, 21, 'Couve', '2 folhas', 'Kale.png'),
+(176, 21, 'Hortelã', '10 folhas', 'Mint.png'),
+(177, 21, 'Suco de Limão', '1/2 Xícara de Chá', 'Lemon.png'),
+(178, 21, 'Maracujá', '1 xícara de chá da polpa', 'Passionfruit.png'),
+(179, 21, 'Água', '1 litro', 'Water.png'),
+(180, 21, 'Açúcar', 'a gosto', 'Sugar.png'),
+(181, 21, 'Gelo', 'opcional', 'Ice.png'),
+(182, 22, 'Laranjas', '6 Grandes (Cerca de 800ml)', 'Orange.png'),
+(183, 22, 'Cenouras', '2 Médias', 'Carrot.png'),
+(184, 22, 'Água', 'Em média 200ml', 'Water.png'),
+(185, 22, 'Açúcar', 'a gosto', 'Sugar.png'),
+(186, 22, 'Gelo', 'opcional', 'Ice.png'),
+(281, 23, 'Manga', 'Inteira Madura ', 'Mango.png'),
+(282, 23, 'Abacaxi', '1/2 Médio', 'Pineapple.png'),
+(283, 23, 'Laranja', '3 grandes', 'Orange.png'),
+(284, 23, 'Limão', '2 Grandes', 'Lemon.png'),
+(285, 23, 'Água', '200ml', 'Water.png'),
+(286, 23, 'Açúcar', 'a gosto', 'Sugar.png'),
+(287, 23, 'Gelo', 'opcional', 'Ice.png'),
+(288, 24, 'Maracujá', '2 Médios', 'Passionfruit.png'),
+(289, 24, 'Abacaxi', '1/2 Cerca de 300g', 'Pineapple.png'),
+(290, 24, 'Água', '1 litro', 'Water.png'),
+(291, 24, 'Açúcar', 'a gosto', 'Sugar.png'),
+(292, 24, 'Gelo', 'opcional', 'Ice.png'),
+(293, 25, 'Pêssego', '3 Médios 450g', 'Peaches.png'),
+(294, 25, 'Água', '500ml', 'Water.png'),
+(295, 25, 'Açúcar', 'a gosto', 'Sugar.png'),
+(296, 25, 'Gelo', 'opcional', 'Ice.png'),
+(297, 25, 'Morango', '1 xícara de chá', 'Strawberry.png'),
+(298, 25, 'Framboesas', '1/2 Xícara de Chá', 'Raspberry.png'),
+(299, 25, 'Amoras', '1/2 Xícara de chá', 'Blackberry.png'),
+(300, 25, 'Mirtilo', '1/2 Xícara de Chá', 'Blueberry.png'),
+(301, 25, 'Água', '500ml', 'Water.png'),
+(302, 25, 'Açúcar', 'a gosto', 'Sugar.png'),
+(328, 25, 'Gelo', 'opcional', 'Ice.png'),
+(329, 26, 'Chá de Erva Doce', '1 litro', 'FennelTea.png'),
+(330, 26, 'Suco de Limão', '1 Xícara de Chá', 'Lemon.png'),
+(331, 26, 'Açúcar', 'a gosto', 'Sugar.png'),
+(332, 26, 'Gelo', 'opcional', 'Ice.png'),
+(333, 27, 'Uvas Verdes', '500g ', 'Grape.png'),
+(334, 27, 'Kiwis', '5 médios cerca de 390g', 'Kiwi.png'),
+(335, 27, 'Hortelã', '15 folhas', 'Mint.png'),
+(336, 27, 'Água', '600ml', 'Water.png'),
+(337, 27, 'Açúcar', 'a gosto', 'Sugar.png'),
+(338, 27, 'Gelo', 'opcional', 'Ice.png'),
+(339, 28, 'Amoras ', '3 xícaras de chá', 'Blackberry.png'),
+(353, 28, 'Limão', '2 limões', 'Lemon.png'),
+(354, 28, 'Hortelã', 'Decorar', 'Mint.png'),
+(355, 28, 'Água', '600ml', 'Water.png'),
+(356, 28, 'Açúcar', 'a gosto', 'Sugar.png'),
+(357, 28, 'Gelo', 'opcional', 'Ice.png'),
+(358, 29, 'Limão', '1/2 Xícara de Chá', 'Lemon.png'),
+(359, 29, 'Água', '960ml', 'Water.png'),
+(360, 29, 'Framboesa', '1/2 Xícara de Chá', 'Raspberry.png'),
+(361, 29, 'Açúcar', 'a gosto', 'Sugar.png'),
+(362, 29, 'Gelo', 'opcional', 'Ice.png'),
+(363, 30, 'Pitaya', '1 Grande', 'Dragonfruit.png'),
+(364, 30, 'Limão', '3 Limões', 'Lemon.png'),
+(365, 30, 'Água', '1 litro', 'Water.png');
 
 -- --------------------------------------------------------
 
@@ -275,23 +397,19 @@ CREATE TABLE `users` (
   `username` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `foto` varchar(255) NOT NULL
+  `userImage` varchar(255) NOT NULL,
+  `reset_code` varchar(6) DEFAULT NULL,
+  `reset_code_expires` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Despejando dados para a tabela `users`
 --
 
-INSERT INTO `users` (`userId`, `username`, `email`, `password`, `foto`) VALUES
-(1, 'Paulo', 'paulo@example.com', '', 'sim'),
-(42, 'gigi', 'gigi@example.com', '123', ''),
-(43, 'wellington', 'wellington@gmail.com', '12345678', ''),
-(44, 'Matthew', 'matthew@gmail.com', '12345678', ''),
-(45, 'sasuke', 'naruto@gmail.com', '12345678', ''),
-(46, 'Caki', 'caikehenry12@gmail.com', 'Caki2007', ''),
-(47, 'Tiotoji', 'dinizmatheus249@gmail.com', '12345678', ''),
-(48, 'Paulo Cesar ', 'pcc25.venon@gmail.com', '12345678', '/uploads/1731090522192.jpeg'),
-(49, 'Gigi', 'giovannavarjao427@gmail.com', '12345678', '');
+INSERT INTO `users` (`userId`, `username`, `email`, `password`, `userImage`, `reset_code`, `reset_code_expires`) VALUES
+(48, 'Paulo Cesar ', 'pcc25.venon@gmail.com', '12345678', '/uploads/1731090522192.jpeg', NULL, NULL),
+(49, 'Gigi', 'giovannavarjao427@gmail.com', '12345678', '', NULL, NULL),
+(68, 'Paulo', 'zuitcapudo@gmail.com', 'Pimas1234', '1733309742991.jpeg', NULL, NULL);
 
 --
 -- Índices para tabelas despejadas
@@ -350,7 +468,7 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT de tabela `favorites`
 --
 ALTER TABLE `favorites`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT de tabela `products`
@@ -362,7 +480,7 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT de tabela `recipes`
 --
 ALTER TABLE `recipes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=366;
 
 --
 -- AUTO_INCREMENT de tabela `reviews`
@@ -374,7 +492,7 @@ ALTER TABLE `reviews`
 -- AUTO_INCREMENT de tabela `users`
 --
 ALTER TABLE `users`
-  MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
+  MODIFY `userId` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- Restrições para tabelas despejadas
